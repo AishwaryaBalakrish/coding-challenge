@@ -1,12 +1,13 @@
 from selenium import webdriver
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import TimeoutException, WebDriverException, NoSuchElementException, ElementClickInterceptedException, ElementNotVisibleException
+from selenium.common.exceptions import TimeoutException, ElementNotVisibleException
 from selenium.webdriver.common.by import By
 from datetime import datetime
 from selenium.webdriver.chrome.options import Options
 
 chrome_options = Options()
+#the chrome options are overridden to run the test cases in headless mode in docker containers.
 chrome_options.add_argument('--no-sandbox')
 chrome_options.add_argument('--headless')
 chrome_options.add_argument('--disable-dev-shm-usage')
@@ -24,6 +25,10 @@ class RyanAirWebAPIs:
         self.driver.get(self.web_site_url)  # Open Site in new chrome window
 
     def wait_for_home_page_to_load(self):
+        """
+        Waiting for the home page to load by waiting for the 'accept cookie' button to be visible
+        :return:
+        """
         accept_cookie_xpath = "//div[@id='cookie-popup-with-overlay']//button[contains(text(),'Yes, I agree')]"
         try:
             WebDriverWait(self.driver, 20).until(EC.visibility_of_element_located((By.XPATH, accept_cookie_xpath)))
@@ -32,6 +37,10 @@ class RyanAirWebAPIs:
             self.driver.refresh()
 
     def accept_cookie(self):
+        """
+        Accept cookies as soon as the home page is loaded
+        :return:
+        """
         try:
             accept_cookie_xpath = "//div[@id='cookie-popup-with-overlay']//button[contains(text(),'Yes, I agree')]"
             accept_cookie_button = self.driver.find_element(By.XPATH, accept_cookie_xpath)
@@ -42,6 +51,12 @@ class RyanAirWebAPIs:
             return False, "Failed to Accept cookies as - Got an Exception -%s" % e
 
     def subscribe_with_junk_email(self):
+        """
+        when run in headless mode the subscribe email widjet comes in the way,
+        so subscribe with a junk email before proceeding with other testcases.
+        This will make this widget completely disappear and will come in our way further testing
+        :return:
+        """
         try:
             email_input_xpath = "//hp-subscriber-widget-container//input[@type='email']"
             WebDriverWait(self.driver, 10).until(EC.visibility_of_element_located((By.XPATH, email_input_xpath)))
@@ -62,6 +77,21 @@ class RyanAirWebAPIs:
 
     def search_trip_flights(self, trip_type, departure_country, departure_city, destination_country, destination_city,
                         departure_date, num_of_adults, num_of_teens, num_of_children, num_of_infants, return_date=''):
+        """
+        The return_date has to be supplied only when the trip_type='return'
+        :param trip_type:
+        :param departure_country:
+        :param departure_city:
+        :param destination_country:
+        :param destination_city:
+        :param departure_date:
+        :param num_of_adults:
+        :param num_of_teens:
+        :param num_of_children:
+        :param num_of_infants:
+        :param return_date:
+        :return:
+        """
 
         try:
             if trip_type.lower() == 'one way':
@@ -93,7 +123,6 @@ class RyanAirWebAPIs:
 
             destination_city_button = self.driver.find_element(By.XPATH, "//div//span[contains(text(),'%s')]"% destination_city.capitalize())
             destination_city_button.click()
-
 
             # if one way is selected then make sure the return date picker disappears
             if trip_type.lower() == 'one way':
@@ -185,6 +214,16 @@ class RyanAirWebAPIs:
 
     def check_if_the_right_flights_are_displayed(self, departure_city, destination_city, departure_date, trip_type,
                                                  num_passengers, return_date=''):
+        """
+        This method will make sure the search returns expected flights
+        :param departure_city:
+        :param destination_city:
+        :param departure_date:
+        :param trip_type:
+        :param num_passengers:
+        :param return_date:
+        :return:
+        """
         try:
             WebDriverWait(self.driver, 30).until(EC.visibility_of_element_located((By.XPATH, "//button[contains(text(), ' Edit search')]")))
             departure_date_formatted = datetime.strptime(departure_date, '%d/%m/%Y')
